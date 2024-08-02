@@ -27,7 +27,7 @@
 }
 
 .exportImportMenu {
-    padding: 6px;
+    padding: 6px 8px;
     background-color: white;
     position: absolute;
     left: 10px;
@@ -43,14 +43,16 @@
 
 .exportProject,
 .importProject {
+    border-bottom: 1px solid #ffb522;
     cursor: pointer;
-    padding: 4px;
+    padding: 6px 4px;
     background-color: transparent;
 }
 
 .exportProject:hover,
 .importProject:hover {
-    color: #707070;
+  background: #ffb522;
+  color: white;
 }
 
 .panelRunFunctions {

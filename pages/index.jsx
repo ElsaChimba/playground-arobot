@@ -23,7 +23,7 @@ export default function Home() {
 
         {/* Cover */}
         <div className={HomeStyle.headerCover}>
-          <img className={HomeStyle.headerCoverImage} src="/images/arobot-cover.jpg" alt='' />
+          <img className={HomeStyle.headerCoverImage} src="/images/arobot-7.jpg" alt='' />
           <div className={HomeStyle.headerGradient}></div>
         </div>
 
@@ -113,9 +113,9 @@ export default function Home() {
             </div>
 
             <div className={HomeStyle.arobotSectionImagesContainer}>
-              <Image src="/images/arobot-1.jpg" className={HomeStyle.arobotSectionImage} height='250' width='250' alt='' />
-              <Image src="/images/arobot-2.jpg" className={HomeStyle.arobotSectionImage} height='250' width='250' alt='' />
-              <Image src="/images/arobot-3.jpg" className={HomeStyle.arobotSectionImage} height='250' width='250' alt='' />
+              <Image src="/images/arobot-4.jpg" className={HomeStyle.arobotSectionImage} height={250} width={250} alt='' />
+              <Image src="/images/arobot-5.jpg" className={HomeStyle.arobotSectionImage} height={250} width={250} alt='' />
+              <Image src="/images/arobot-6.jpg" className={HomeStyle.arobotSectionImage} height={250} width={250} alt='' />
             </div>
           </div>
 

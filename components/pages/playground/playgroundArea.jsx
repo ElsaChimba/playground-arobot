@@ -5,8 +5,29 @@ import PlaygroundContext from '@/components/contexts/PlaygroundContext';
 import { useContext, useState } from 'react';
 import ArobotPlayer from '@/components/ui/ArobotPlayer';
 
+const arduino_codebase =
+`#include <Servo.h>
+
+Servo servoDireito;
+Servo servoEsquerdo;
+
+void setup() {
+  // seu código aqui executa uma vez:
+  Serial.begin(9600);
+  servoDireito.attach(6);
+  servoEsquerdo.attach(5);
+  
+//{restante_code}
+}
+
+void loop() {
+  //  seu código aqui executa repetidamente:
+
+}
+`
+
 export default function PlaygroundArea() {
-    const { niveis, runState, changeRunState, addNivel } = useContext(PlaygroundContext);
+    const { niveis, runState, changeRunState, addNivel,  currentNivel} = useContext(PlaygroundContext);
     const [showExportImportMenu, setShowExportImportMenu] = useState(false);
     const disable_buttons = {
         pause: false,
@@ -30,20 +51,135 @@ export default function PlaygroundArea() {
         if (nome_file == '') nome_file = 'projecto_arobot_playground';
 
         const link = document.createElement('a');
-        link.setAttribute('href', 'data:json/application;charset=utf-8,' + encodeURIComponent(
+        link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(
             JSON.stringify(niveis)
         ));
-        link.setAttribute('download', nome_file + '.json');
+        link.setAttribute('download', nome_file + '.playground');
 
         link.click();
 
+    }
+    const exportToArduino = ()=>{
+        var nome_file = prompt('Qual será o nome do ficheiro: ');
+        if (nome_file == '') nome_file = 'projecto_arobot_playground';
+
+        var arduino_code = arduino_codebase;
+        const blocks = niveis[currentNivel].blocks;
+        var code_blocks = '';
+        //'  '
+
+        for (const block of blocks) {
+            switch (block.name) {
+                case 'mover':
+                    var passos = parseInt(block.sequence[1].value);
+                    var number_voltas = Math.floor(passos / 10);
+                    var restante_passo = passos - (number_voltas*10);
+                   
+                    if (number_voltas > 0){
+                    code_blocks+=
+                    `  for (int x= 0; x < ${number_voltas}; x++){
+                         servoDireito.write(360);
+                         servoEsquerdo.write(360);
+                         delay(15);
+                       }\n`;
+                    }
+                    if (restante_passo > 0){
+                        code_blocks+=`  servoDireito.write(${restante_passo});\n`;
+                        code_blocks+=`  servoEsquerdo.write(${restante_passo});\n`;
+                    }
+                    code_blocks+=`  delay(100);\n`;
+                    //Serial.write();
+
+                    break;
+                case 'rotate':
+                    var graus = parseInt(block.sequence[1].value);
+                   // code_blocks+=`  angleCurrent+=${graus};`;
+                    if (graus > 0){
+                        code_blocks+=
+                        `  for (int x= 0; x < ${graus}; x++){
+                             servoDireito.write(360);
+                             servoEsquerdo.write(-360);
+                             delay(15);
+                           }\n`;
+                    }
+                    else if(graus < 0){
+                        code_blocks+=
+                        `  for (int x= 0; x < ${Math.abs(graus)}; x++){
+                             servoDireito.write(-360);
+                             servoEsquerdo.write(360);
+                             delay(15);
+                           }\n`;
+                    }
+
+                    break;
+                case 'rotate-exact':
+                    //precisa ser melhorado
+                    var graus = parseInt(block.sequence[1].value);
+                   // code_blocks+=`  angleCurrent+=${graus};`;
+                    if (graus > 0){
+                        code_blocks+=
+                        `  for (int x= 0; x < ${graus}; x++){
+                             servoDireito.write(360);
+                             servoEsquerdo.write(-360);
+                             delay(15);
+                           }\n`;
+                    }
+                    else if(graus < 0){
+                        code_blocks+=
+                        `  for (int x= 0; x < ${Math.abs(graus)}; x++){
+                             servoDireito.write(-360);
+                             servoEsquerdo.write(360);
+                             delay(15);
+                           }\n`;
+                    }
+                    break;
+                case 'buzinar':
+                    code_blocks+=`  Serial.write('Buzinou');\n`;
+                    code_blocks+=`  delay(100);\n`;
+                    break;
+                case 'esperar':
+                    var delay=parseInt(block.sequence[1].value) * 1000;
+                    code_blocks+=`  delay(${delay});\n`;
+
+                    break;
+                case 'acender_luz':
+                    code_blocks+=`  Serial.write('Luz acessa');\n`;
+                    code_blocks+=`  delay(100);\n`;
+                    break;
+                case 'apagar_luz':
+                    code_blocks+=`  Serial.write('Luz apagada');\n`;
+                    code_blocks+=`  delay(100);\n`;
+                    break;
+                case 'avancar_nivel':
+                    break;
+                case 'recuar_nivel':
+                    break;
+                case 'nivel_especifico':
+                    break;
+
+                case 'console_message':
+                    var valor = block.getValue();
+                    code_blocks+=`  Serial.write('${valor}');\n`;
+        
+                    break;
+            }
+        }
+        
+        arduino_code = arduino_code.replace('//{restante_code}', code_blocks);
+        const link = document.createElement('a');
+        link.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(
+            arduino_code
+        ));
+        link.setAttribute('download', nome_file + '.ino');
+
+        link.click();
     }
 
 
     const importProject = () => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.json';
+        input.accept = '.playground';
         input.click();
 
         input.addEventListener('change', () => {
@@ -106,8 +242,9 @@ export default function PlaygroundArea() {
                     <div className={Styles.exportImportMenu} onClick={(ev) => {
                         ev.stopPropagation();
                     }}>
-                        <div onClick={exportProject} className={Styles.exportProject}>Exportar Projecto</div>
-                        <div onClick={importProject} className={Styles.importProject}>Importar Projecto</div>
+                        <div onClick={exportToArduino} className={Styles.exportProject}>Exportar para Arduino</div>
+                        <div onClick={exportProject} className={Styles.exportProject}>Salvar projecto</div>
+                        <div onClick={importProject} className={Styles.importProject}>Importar projecto</div>
                     </div>)}
 
             </button>
