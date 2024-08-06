@@ -10,12 +10,17 @@ const arduino_codebase =
 
 Servo servoDireito;
 Servo servoEsquerdo;
+int angle=0;
+int resAngle=0;
 
 void setup() {
   // seu código aqui executa uma vez:
   Serial.begin(9600);
   servoDireito.attach(6);
   servoEsquerdo.attach(5);
+
+  servoDireito.write(90);
+  servoEsquerdo.write(90);
   
 //{restante_code}
 }
@@ -72,83 +77,97 @@ export default function PlaygroundArea() {
             switch (block.name) {
                 case 'mover':
                     var passos = parseInt(block.sequence[1].value);
-                    var number_voltas = Math.floor(passos / 10);
-                    var restante_passo = passos - (number_voltas*10);
-                   
-                    if (number_voltas > 0){
-                    code_blocks+=
-                    `  for (int x= 0; x < ${number_voltas}; x++){
-                         servoDireito.write(360);
-                         servoEsquerdo.write(360);
-                         delay(15);
-                       }\n`;
+              
+                    if (passos != 0){
+                        code_blocks+=
+                    `  // Mover ${passos} passos\n`+
+                    `  servoDireito.write(${passos > 0 ? '180': '0'});\n`+
+                    `  servoEsquerdo.write(${passos > 0 ? '180': '0'});\n`+
+                    `  delay(${Math.abs(passos) *  10 });\n`+
+                    `  servoDireito.write(90);\n`+
+                    `  servoEsquerdo.write(90);\n`+
+                    `  delay(100);\n\n`;
                     }
-                    if (restante_passo > 0){
-                        code_blocks+=`  servoDireito.write(${restante_passo});\n`;
-                        code_blocks+=`  servoEsquerdo.write(${restante_passo});\n`;
-                    }
-                    code_blocks+=`  delay(100);\n`;
-                    //Serial.write();
+                  
 
                     break;
                 case 'rotate':
                     var graus = parseInt(block.sequence[1].value);
-                   // code_blocks+=`  angleCurrent+=${graus};`;
-                    if (graus > 0){
+                   
+                    if (graus != 0){
+
                         code_blocks+=
-                        `  for (int x= 0; x < ${graus}; x++){
-                             servoDireito.write(360);
-                             servoEsquerdo.write(-360);
-                             delay(15);
-                           }\n`;
-                    }
-                    else if(graus < 0){
+                        `  // Girar ${graus} graus\n`+
+                        `  angle+=${graus};\n`;
+                        if (graus > 0){
+                            code_blocks+=
+                            `  servoDireito.write(180);\n`+
+                            `  servoEsquerdo.write(0);\n`;
+                        }
+                        else if(graus < 0){
+                            code_blocks+=
+                            `  servoDireito.write(0);\n`+
+                            `  servoEsquerdo.write(180);\n`;
+                        }
+                        
                         code_blocks+=
-                        `  for (int x= 0; x < ${Math.abs(graus)}; x++){
-                             servoDireito.write(-360);
-                             servoEsquerdo.write(360);
-                             delay(15);
-                           }\n`;
+                        `  delay(${Math.abs(graus) *  10 });\n`+
+                        `  servoDireito.write(90);\n`+
+                        `  servoEsquerdo.write(90);\n`+
+                        `  delay(100);\n\n`;
+                  
+                    
+                        
                     }
+                        
 
                     break;
                 case 'rotate-exact':
-                    //precisa ser melhorado
-                    var graus = parseInt(block.sequence[1].value);
-                   // code_blocks+=`  angleCurrent+=${graus};`;
-                    if (graus > 0){
+                   
+                        var graus = parseInt(block.sequence[1].value);
                         code_blocks+=
-                        `  for (int x= 0; x < ${graus}; x++){
-                             servoDireito.write(360);
-                             servoEsquerdo.write(-360);
-                             delay(15);
-                           }\n`;
-                    }
-                    else if(graus < 0){
+                        `  // Girar ${graus} graus\n`+
+                        `  resAngle=(angle - ${graus}) * -1;\n`+
+                        `  angle=${graus};\n`;
+
                         code_blocks+=
-                        `  for (int x= 0; x < ${Math.abs(graus)}; x++){
-                             servoDireito.write(-360);
-                             servoEsquerdo.write(360);
-                             delay(15);
-                           }\n`;
-                    }
+                        `  if(resAngle != 0) {\n`+
+                        `    if (resAngle > 0){\n`+
+                        `      servoDireito.write(180);\n`+
+                        `      servoEsquerdo.write(0);\n`+
+                        `    }\n`+
+                        `    else {\n`+
+                        `      servoDireito.write(0);\n`+
+                        `      servoEsquerdo.write(180);\n`+
+                        `    }\n`+
+                        `    delay(abs(resAngle) * 10 );\n`+
+                        `    servoDireito.write(90);\n`+
+                        `    servoEsquerdo.write(90);\n`+
+                        `    delay(100);\n`+
+                        `  }\n\n`;
+                      
                     break;
                 case 'buzinar':
-                    code_blocks+=`  Serial.write('Buzinou');\n`;
-                    code_blocks+=`  delay(100);\n`;
+                    code_blocks+=`  // Buzinar\n`;
+                    code_blocks+=`  Serial.write("Buzinou\\n");\n`;
+                    code_blocks+=`  delay(100);\n\n`;
                     break;
                 case 'esperar':
-                    var delay=parseInt(block.sequence[1].value) * 1000;
-                    code_blocks+=`  delay(${delay});\n`;
+                   
+                    var delay=parseInt(block.sequence[1].value);
+                    code_blocks+=`  // Esperar ${delay}s\n`;
+                    code_blocks+=`  delay(${delay * 1000});\n\n`;
 
                     break;
                 case 'acender_luz':
-                    code_blocks+=`  Serial.write('Luz acessa');\n`;
-                    code_blocks+=`  delay(100);\n`;
+                    code_blocks+=`  // Acender Luz\n`;
+                    code_blocks+=`  Serial.write("Luz acessa\\n");\n`;
+                    code_blocks+=`  delay(100);\n\n`;
                     break;
                 case 'apagar_luz':
-                    code_blocks+=`  Serial.write('Luz apagada');\n`;
-                    code_blocks+=`  delay(100);\n`;
+                    code_blocks+=`  // Apagar Luz\n`;
+                    code_blocks+=`  Serial.write("Luz apagada\\n");\n`;
+                    code_blocks+=`  delay(100);\n\n`;
                     break;
                 case 'avancar_nivel':
                     break;
@@ -159,7 +178,8 @@ export default function PlaygroundArea() {
 
                 case 'console_message':
                     var valor = block.getValue();
-                    code_blocks+=`  Serial.write('${valor}');\n`;
+                    code_blocks+=`  // Emitir mensagem\n`;
+                    code_blocks+=`  Serial.write("${valor}\\n");\n\n`;
         
                     break;
             }
